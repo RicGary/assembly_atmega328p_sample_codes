@@ -1,0 +1,6 @@
+*.hex
+*.ist
+*.pro
+*.err
+*.asm~
+*.lst

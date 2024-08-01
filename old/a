@@ -1,0 +1,74 @@
+.include "m328Pdef.inc"
+
+.org 0x0000
+    rjmp inicio ; vai para SR inicio
+
+inicio: ; SR de configuração da pilha e constantes iniciais.
+    ldi R16, low(RAMEND) ; configura SPL como final da memoria RAM
+    out SPL, R16
+    ldi R16, high(RAMEND) ; configura SPH como final da memoria RAM
+    out SPH, R16
+    clr R17 ; Limpa R17 que será usado para atualizar duty
+    ldi R18, 0x33 ; Define R18 como decimal 51, para ser a diferença entre os níveis.
+    ldi R19, 0x05 ; Define o numero de níveis para o duty
+    mul R18, R19 ; Calcula o valor de reset do PWM
+    mov R19, R0 ; Escreve o valor de reset em R19
+    rjmp config_pin
+
+config_pin: ; configura PB0 como botão em estado de pull-up e PD6 como saída para o OC0A
+    clr R16
+    out DDRB, R16
+    ser R16
+    out PORTB, R16
+    out DDRD, R16
+    rjmp config_PWM
+
+config_PWM:
+    ldi R16, 0b0100_00_11 ; Configura FPWM normal em modo não invertido.
+    out TCCR0A, R16
+    ldi R16, 0b000_00_100 ; Escolhe PS em 256
+    out TCCR0B, R16
+    clr R17
+    out OCR0A, R17 ; Escolhe Duty inicial igual a zero
+    rjmp check_button
+
+check_button: ; Conferencia do botão
+    sbic PINB, 0
+    rjmp check_button ; "se" não estiver apertado - retorna e testa novamente
+    rjmp start_timer ; "se" estiver apertado inicia o timer
+
+start_timer: ; Inicia o timer
+    ldi R16, 0b0000_1011 ; Configura Timer1 para CTC com prescaler de 1024
+    sts TCCR1B, R16
+    ldi R16, high(46875)
+    sts OCR1AH, R16 ; OCR1A = 46875 para 3 segundos
+    ldi R16, low(46875)
+    sts OCR1AL, R16
+    rjmp program
+
+program:
+    cp R17, R19 ; compara duty com o valor de reset
+    breq reset_PWM ; "se" igual reseta o duty
+    add R17, R18 ; se diferente adicionar R18 no valor do duty para aumentar a luminosidade
+    out OCR0A, R17 ; Copia duty para PWM
+    rjmp reset_button
+
+reset_PWM: ; Reinicia o Duty após chegar no nível máximo.
+    clr R17
+    out OCR0A, R17
+    rjmp reset_button
+
+reset_button: ; Confere se o botão foi desapertado para reiniciar o ciclo.
+    sbis PINB, 0
+    rjmp reset_button
+    rjmp check_button
+
+check_timer: ; Verifica se o timer atingiu o valor de comparação
+    lds R16, TIFR1
+    sbrs R16, OCF1A
+    rjmp check_timer
+    rjmp stop_LED
+
+stop_LED: ; Desliga o LED
+    clr R16
+    out PORTD, R16
