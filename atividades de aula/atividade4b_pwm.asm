@@ -45,20 +45,12 @@ ldi r16, 128        ; Duty cycle 50%
 sts OCR2A, r16
 
 ; Configuracoes iniciais
-;clr    R16
-;mov    R10,R16  ; R10 � registrador dedicado a guardar intensidade do LED.
-;ldi    R16,125
-;mov    R11,R16  ; R11 tempo de espera para filtro do bot�o - deboucing. Com PS de 64, 500 us s�o necess�rios 125=x7D clock de timer.
-;ldi    R16,0x26
-;mov    R12,R16   ;R12 tempo de espera para avan�ar rampa de PWM. Para cada rampa duara 10s, cada unidade do counter 2 deve levar 39ms, com PS de 64 s�o necess�rios cerca de 9843=x2673 clocks.
-;clr    R20       ;Define uma contante zero
-
-clr R10         ; Reg. intensidade do led
+clr R10          ; Reg. intensidade do led
 ldi r16, 125
-mov r11, r16    ; R11 tempo de espera para filtro do bot�o - deboucing. Com PS de 64, 500 us s�o necess�rios 125=x7D clock de timer.
+mov r11, r16     ; R11 tempo de espera para filtro do bot�o - deboucing. Com PS de 64, 500 us s�o necess�rios 125=x7D clock de timer.
 ldi r16, 38
 mov r12, r16     ; R12 tempo de espera para avan�ar rampa de PWM. Para cada rampa duara 10s, cada unidade do counter 2 deve levar 39ms, com PS de 64 s�o necess�rios cerca de 9843=x2673 clocks.
-clr R20         ; Cte em 0
+clr R20          ; Cte em 0
 
 ; Rotinas do botao
 check_buttom: ; SR para esperar o aperto do bot�o.
