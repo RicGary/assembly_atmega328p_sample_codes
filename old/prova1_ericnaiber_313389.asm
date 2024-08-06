@@ -9,62 +9,65 @@
 ; 9.  Verifica se o timer 1 atingiu o valor de comparação, caso contrário, ele continua no loop atual.
 ; 10. Se o timer 1 atingir o valor de comparação, ele limpa o pino D, efetivamente desligando o LED.
 
+; Aviso, fiz a prova antes de realmente entender o conteudo, nao se baseie nela para nada
+
 .include "m328Pdef.inc" ; Inclui o arquivo de definição do microcontrolador
 
 .org 0x0000 ; Define o endereço de início do programa 
 rjmp inicio ; Salta para a  "inicio"
 
 inicio: 
-    ldi R16, low(RAMEND) ; Carrega o valor mais baixo do endereço da memória RAM em R16 
-    out SPL, R16 ; Armazena o valor de R16 no registrador SPL (Stack Pointer Low) 
-    ldi R16, high(RAMEND) ; Carrega o valor mais alto do endereço da memória RAM em R16 
-    out SPH, R16 ; Armazena o valor de R16 no registrador SPH (Stack Pointer High) 
-    clr R17 ; Limpa o registrador R17 
-    ldi R18, 0x33 ; Carrega o valor hexadecimal 0x33 em R18 
-    ldi R19, 0x05 ; Carrega o valor hexadecimal 0x05 em R19 
-    mul R18, R19 ; Multiplica os valores de R18 e R19 e armazena o resultado em R1:R0 
-    mov R19, R0 ; Move o valor do registrador R0 para o registrador R19 
-    rjmp config_pin ; Salta para a "config_pin"
+    ldi R16, low(RAMEND)    ; Carrega o valor mais baixo do endereço da memória RAM em R16 
+    out SPL, R16            ; Armazena o valor de R16 no registrador SPL (Stack Pointer Low) 
+    ldi R16, high(RAMEND)   ; Carrega o valor mais alto do endereço da memória RAM em R16 
+    out SPH, R16            ; Armazena o valor de R16 no registrador SPH (Stack Pointer High) 
+    clr R17                 ; Limpa o registrador R17 
+    ldi R18, 51             ; Carrega o valor hexadecimal 51 em R18 
+    ldi R19, 5              ; Carrega o valor hexadecimal 5 em R19 
+    mul R18, R19            ; Multiplica os valores de R18 e R19 e armazena o resultado em R1:R0 
+    mov R19, R0             ; Move o valor do registrador R0 para o registrador R19 
+    rjmp config_pin         ; Salta para a "config_pin"
 
 config_pin: 
-    clr R16 ; Limpa o registrador R16 
-    out DDRB, R16 ; Armazena o valor de R16 no registrador DDRB (Data Direction Register B) 
-    ser R16 ; Seta todos os bits de R16 como '1' 
-    out PORTB, R16 ; Armazena o valor de R16 no registrador PORTB 
-    out DDRD, R16 ; Armazena o valor de R16 no registrador DDRD 
+    clr R16         ; Limpa o registrador R16 
+    out DDRB, R16   ; Seta Bx como entrada 
+    ser R16         ; Seta todos os bits de R16 como '1' 
+    out PORTB, R16  ; Pull-up no botao p evitar ruido 
+    out DDRD, R16   ; Seta Dx como saida
     rjmp config_PWM ; Salta para a "config_PWM"
 
 config_PWM: 
-    ldi R16, 0b0100_00_11 ; Carrega o valor binário 01000011 em R16 (WGM00, WGM01) -> 1
-    out TCCR0A, R16 ; Armazena o valor de R16 no registrador TCCR0A (Timer/Counter Control Register A) 
-    ldi R16, 0b000_00_100 ; Carrega o valor binário 00000100 em R16 (CS02) -> 1
-    out TCCR0B, R16 ; Armazena o valor de R16 no registrador TCCR0B (Timer/Counter Control Register B) 
-    clr R17 ; Limpa o registrador R17 
-    out OCR0A, R17 ; Armazena o valor de R17 no registrador OCR0A (Output Compare Register A) 
-    rjmp check_button ; Salta para a "check_button"
+    ldi R16, 0b0100_00_11   ; Carrega o valor binário 01000011 em R16 (WGM00, WGM01) -> 1
+    out TCCR0A, R16         ; Togla OC0A on match, F-PWM
+    ldi R16, 0b000_00_100   ; Prescaler 256
+    out TCCR0B, R16         ; Armazena o valor de R16 no registrador TCCR0B (Timer/Counter Control Register B) 
+    clr R17                 ; Limpa o registrador R17 
+    out OCR0A, R17          ; Zera timer
+    rjmp check_button       ; Salta para a "check_button"
 
 check_button: 
-    sbic PINB, 0 ; Pula para a próxima instrução se o bit 0 de PINB estiver setado 
-    rjmp check_button ; Salta para a "check_button" caso o botão não esteja pressionado 
-    rcall debounce ; Chama a subrotina debounce
-    rjmp start_timer ; Salta para a "start_timer" caso o botão esteja pressionado
+    sbic PINB, 0            ; Pula para a próxima instrução se o bit 0 de PINB estiver setado 
+    rjmp check_button       ; Salta para a "check_button" caso o botão não esteja pressionado 
+    rcall debounce          ; Chama a subrotina debounce
+    rjmp start_timer        ; Salta para a "start_timer" caso o botão esteja pressionado
 
+; Esse debounce ta ruim
 debounce:
     ldi R16, 50 ; Carrega o valor 50 em R16
 
 debounce_loop:
-    dec R16 ; Decrementa o valor de R16
-    brne debounce_loop ; Continua no loop se R16 não é zero
-    ret ; Retorna para a chamada da subrotina
+    dec R16             ; Decrementa o valor de R16
+    brne debounce_loop  ; Continua no loop se R16 não é zero
+    ret                 ; Retorna para a chamada da subrotina
 
 start_timer: 
-    ldi R16, 0b0000_1011 ; Carrega o valor binário 00001011 em R16 
-    sts TCCR1B, R16 ; Armazena o valor de R16 no registrador TCCR1B: (WGM12, CS10, CS11) -> 1
-    ldi R16, high(46875) ; Carrega o valor mais alto do número 46875 em R16 -> OCR1A = 46875 para 3 segundos
-    sts OCR1AH, R16 ; Armazena o valor de R16 no registrador OCR1AH (Output Compare Register 1A High) 
-    ldi R16, low(46875) ; Carrega o valor mais baixo do número 46875 em R16 
-    sts OCR1AL, R16 ; Armazena o valor de R16 no registrador OCR1AL (Output Compare Register 1A Low) 
-    rjmp program ; Salta para a "program"
+    ldi R16, 0b0000_1011    ; Carrega o valor binário 00001011 em R16 
+    sts TCCR1B, R16         ; Prescaler 64, pwm configurado errado
+    ldi R16, high(46875)    ; Carrega o valor mais alto do número 46875 em R16 -> OCR1A = 46875 para 3 segundos
+    sts OCR1AH, R16         ; Armazena o valor de R16 no registrador OCR1AH (Output Compare Register 1A High) 
+    ldi R16, low(46875)     ; Carrega o valor mais baixo do número 46875 em R16 
+    sts OCR1AL, R16         ; Armazena o valor de R16 no registrador OCR1AL (Output Compare Register 1A Low) 
+    rjmp program            ; Salta para a "program"
 
 program: 
     cp R17, R19 ; Compara os valores de R17 e R19 
