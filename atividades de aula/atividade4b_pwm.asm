@@ -53,7 +53,7 @@ sts OCR2A, r16
 ;mov    R12,R16   ;R12 tempo de espera para avan�ar rampa de PWM. Para cada rampa duara 10s, cada unidade do counter 2 deve levar 39ms, com PS de 64 s�o necess�rios cerca de 9843=x2673 clocks.
 ;clr    R20       ;Define uma contante zero
 
-clr r10         ; Reg. intensidade do led
+clr R10         ; Reg. intensidade do led
 ldi r16, 125
 mov r11, r16    ; R11 tempo de espera para filtro do bot�o - deboucing. Com PS de 64, 500 us s�o necess�rios 125=x7D clock de timer.
 ldi r16, 38
@@ -87,13 +87,13 @@ wait_buttom:   ; espera bot�o ser solto
 
 ; Inicio atividades com PWM
 ramp_pwm:
-    inc   R10         ; Increvementa R10 - nivel de intensidade luminosa - duty cycle.
+    inc   R10          ; Increvementa R10 - nivel de intensidade luminosa - duty cycle.
     sts   OCR2A,R10    ; envia R10 para duty cicle - comparador
     ;Inicio depurador
     mov   R16,R10
     out   PORTD,R16
     ;final depurador
-    cp    R10,R20     ; compara R10 com zero - para saber quando voltar para o inicio.
+    cp    R10,R20       ; compara R10 com zero - para saber quando voltar para o inicio.
     breq  check_buttom  ; se R10 = 0 volta para check_buttom
     clr   R16           
     sts   TCNT1H,R16    ;limpa o timer 1
@@ -103,6 +103,6 @@ ramp_pwm:
 wait_ramp:
     lds   R16,TCNT1L
     lds   R16,TCNT1H   ;carrega timer 1
-    cpse   R16,R12     ;compara com R12
-    rjmp   wait_ramp   ; se diferente volta para wait_ramp
-    rjmp   ramp_pwm    ; se igual segue o c�digo para ramp_pwm e increvementar novamente o DC.
+    cpse  R16,R12     ;compara com R12
+    rjmp  wait_ramp   ; se diferente volta para wait_ramp
+    rjmp  ramp_pwm    ; se igual segue o c�digo para ramp_pwm e increvementar novamente o DC.
