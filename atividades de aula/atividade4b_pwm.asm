@@ -4,7 +4,7 @@
 ;
 ; Atividade 4b: Uso de PWM
 ;
-; Nesta atividade, um LED na porta B5 e acionado por um botao na porta B4. Apos o botao ser acionado,
+; Nesta atividade, um LED na porta B3 e acionado por um botao na porta B4. Apos o botao ser acionado,
 ; o led come�ar a brilhar com luminisidade que vai de 0% a 100% aumentando gradtivamente ao longo de 10 s. 
 ; Ap�s isso desliga e � acionado novamente com um novo aperto do bot�o. 
 
