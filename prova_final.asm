@@ -7,9 +7,10 @@
 ; Enunciado:
 ;
 ; Desenvolver um programa para realiza��o de um sistema de controle P(ID), com as especifica��es abaixo:
-
+; FEITO
 ; - Medir um sinal de entrada anal�gico, 0-5V, decorrente de um sensor, com 10 bits de resolu��o.
 
+; FEITO
 ; - Realizar N (N>16)medidas consecutivas e realizar uma m�dia aritm�tica do valor. 
 
 ; - Guardar o valor das �ltimas 124 m�dias na mem�ria.
@@ -37,6 +38,8 @@
 .org 0x0000
 
 .def contador_medidas = r20
+.def soma_low    = r30
+.def soma_high   = r31
 
 ; Configura pilha 
 ldi    R16,low(RAMEND)
@@ -45,7 +48,8 @@ ldi    R16,high(RAMEND)
 out    SPH,R16
 
 ; Configura constantes
-ldi r20, 124                ; Contador do loop para armazenar 124 medidas   
+ldi r20, 16                 ; Contador do loop para armazenar 16 medidas ou mais  
+ldi r21, 16                 ; Cte. do loop 
 ldi r26, low(0x0300)        ; Endereço inicial baixo para Z
 ldi r27, high(0x0300)       ; Endereço inicial alto  para Z
 ldi r28, low(0x0400)        ; Endereço inicial baixo para Y
@@ -67,5 +71,11 @@ loop_store:
     lds r17, ADCL
     st Z+,   r16            ; Armazena a parte alta no endereço atual, incrementa Z
     st Y+,  r17             ; Armazena a parte baixa no endereço apontado por Y, incrementa Y
+    add soma_low, r16  ; Adicionar parte baixa à soma
+    adc soma_high, r17 ; Adicionar parte alta à soma com carry
     dec contador_medidas    ; Decrementa o contador
     brne loop_store         ; Se o contador não é zero, repete o loop
+
+media_final:
+    ldi contador_medidas, r21
+    ; faz divisao de um num. de 16 bits por um de 8 bits
