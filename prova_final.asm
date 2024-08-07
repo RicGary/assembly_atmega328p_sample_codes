@@ -41,8 +41,8 @@
 .def cte_medidas            = r11
 .def deslocamentos_dir      = r22   ; Deve ser N.medidas = 2 ^ deslocamentos_para_direita, nesse caso 16 = 2^4, entao 4 deslocamentos
 .def deslocamentos_dir_cte  = r12   ; Valor fixo de deslocamentos                                  
-.def soma_low               = r30
-.def soma_high              = r31
+.def soma_low               = r13   ; mudei pois esse é o endereco do Z
+.def soma_high              = r21
 
 ; Configura pilha 
 ldi    R16,low(RAMEND)
@@ -56,8 +56,8 @@ ldi deslocamentos_dir    , 4    ; r16/4
 mov deslocamentos_dir_cte, deslocamentos_dir
 mov contador_medidas     , r16  ; Contador do loop para armazenar medidas
 mov cte_medidas          , r16  ; Cte. do loop 
-ldi r26, low(0x0300)            ; Endereço inicial baixo para Z
-ldi r27, high(0x0300)           ; Endereço inicial alto  para Z
+ldi r30, low(0x0300)            ; Endereço inicial baixo para Z (X?) , Endereço maximo = Endereço inicial + 124 (7C)
+ldi r31, high(0x0300)           ; Endereço inicial alto  para Z (X?)
 ldi r28, low(0x0400)            ; Endereço inicial baixo para Y
 ldi r29, high(0x0400)           ; Endereço inicial alto  para Y
 
@@ -67,11 +67,20 @@ sts    ADMUX,   R16
 ldi    R16,     0b1_1_1_0_0_101 ; ADEN (1) habilita ADC, ADSC (1) habilita para iniciar conversao, ADATE (1) conversao automatica, ADIF (0) e ADIE (0) nao serao utilizados, ADPSx (101) prescaler de 32
 sts    ADCSRA,  R16            
 ldi    R16,     0b0000_0_000 ; ACME (0) utiliza entrada padrao do ADC, ADTSx (000) ADC automaticamente inicia uma nova conversao assim que a anterior for feita
-sts    ADCSRB,  R16            ; configura autotrigger em free running
+sts    ADCSRB,  R16            ; Configura autotrigger em free running
 
+;debug
+ldi r24, 0x01 ; usar para simular o ADC
+;debug
 loop_store:
+    cpi YL, 0x7C               ; Verifica se a parte low do Y = 124
+    breq memory_reset          ; Se sim, reseta a memoria
     lds r16, ADCH
     lds r17, ADCL
+    ;debug
+    mov r16, r24
+    mov r17, r24
+    ;debug
     st Z+,   r16                ; Armazena a parte alta no endereço atual, incrementa Z
     st Y+,   r17                ; Armazena a parte baixa no endereço apontado por Y, incrementa Y
     add soma_low, r16           ; Adicionar parte baixa à soma
@@ -79,9 +88,16 @@ loop_store:
     dec contador_medidas        ; Decrementa o contador
     brne loop_store             ; Se o contador não é zero, repete o loop
 
-media_final:
+media_final: ; esta ligado com a SR anterior
     mov contador_medidas, cte_medidas
-    lsr soma_low            ; Desloca o bit mais baixo da parte baixa para o carry
-    ror soma_high           ; Rota a parte alta para direita, puxando o carry para o bit mais alto
+    ; lsr da soma_high para que o carry va para o soma_low
+    lsr soma_high            ; Desloca o bit mais baixo da parte alta para o carry
+    ror soma_low             ; Rota a parte baixa para direita, puxando o carry para o bit mais alto
     dec deslocamentos_dir
-    breq media_final        ; Desloca x vezes para direita
+    brne media_final         ; Desloca x vezes para direita
+    rjmp loop_store
+
+memory_reset: ; Verifica se foram escritos 124 valores na memoria para comecar a sobrescrever
+    ldi YL, low(0x0400)
+    ldi ZL, low(0x0300)
+    rjmp loop_store
