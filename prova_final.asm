@@ -56,14 +56,11 @@ ldi r28, low(0x0400)        ; Endereço inicial baixo para Y
 ldi r29, high(0x0400)       ; Endereço inicial alto  para Y
 
 ; Configura o ADC -> termometro PC0
-ldi    R16,     0b01_0_0_0000
-; REFS1,REFS0 (01) = Vref igual ao Vcc, ADLAR (0) 8 bits ADCL 2 bits ADCH, MUX (0000) ADC0 porta PC0
+ldi    R16,     0b01_0_0_0000 ; REFS1,REFS0 (01) = Vref igual ao Vcc, ADLAR (0) 8 bits ADCL 2 bits ADCH, MUX (0000) ADC0 porta PC0
 sts    ADMUX,   R16            
-ldi    R16,     0b1_1_1_0_0_101
-; ADEN (1) habilita ADC, ADSC (1) habilita para iniciar conversao, ADATE (1) conversao automatica, ADIF (0) e ADIE (0) nao serao utilizados, ADPSx (101) prescaler de 32
+ldi    R16,     0b1_1_1_0_0_101 ; ADEN (1) habilita ADC, ADSC (1) habilita para iniciar conversao, ADATE (1) conversao automatica, ADIF (0) e ADIE (0) nao serao utilizados, ADPSx (101) prescaler de 32
 sts    ADCSRA,  R16            
-ldi    R16,     0b0000_0_000
-; ACME (0) utiliza entrada padrao do ADC, ADTSx (000) ADC automaticamente inicia uma nova conversao assim que a anterior for feita
+ldi    R16,     0b0000_0_000 ; ACME (0) utiliza entrada padrao do ADC, ADTSx (000) ADC automaticamente inicia uma nova conversao assim que a anterior for feita
 sts    ADCSRB,  R16            ; configura autotrigger em free running
 
 loop_store:
