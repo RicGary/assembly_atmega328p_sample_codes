@@ -74,5 +74,5 @@ loop_store:
     brne loop_store         ; Se o contador não é zero, repete o loop
 
 media_final:
-    ldi contador_medidas, r21
+    mov contador_medidas, r21
     ; faz divisao de um num. de 16 bits por um de 8 bits
