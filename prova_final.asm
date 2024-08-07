@@ -37,9 +37,12 @@
 .include m328Pdef.inc
 .org 0x0000
 
-.def contador_medidas = r20
-.def soma_low    = r30
-.def soma_high   = r31
+.def contador_medidas       = r20
+.def cte_medidas            = r11
+.def deslocamentos_dir      = r22   ; Deve ser N.medidas = 2 ^ deslocamentos_para_direita, nesse caso 16 = 2^4, entao 4 deslocamentos
+.def deslocamentos_dir_cte  = r12   ; Valor fixo de deslocamentos                                  
+.def soma_low               = r30
+.def soma_high              = r31
 
 ; Configura pilha 
 ldi    R16,low(RAMEND)
@@ -48,12 +51,15 @@ ldi    R16,high(RAMEND)
 out    SPH,R16
 
 ; Configura constantes
-ldi r20, 16                 ; Contador do loop para armazenar 16 medidas ou mais  
-ldi r21, 16                 ; Cte. do loop 
-ldi r26, low(0x0300)        ; Endereço inicial baixo para Z
-ldi r27, high(0x0300)       ; Endereço inicial alto  para Z
-ldi r28, low(0x0400)        ; Endereço inicial baixo para Y
-ldi r29, high(0x0400)       ; Endereço inicial alto  para Y
+ldi r16, 16                     ; Numero de medidas realizadas, precisa ser multiplo de 2, como 16=2^4 desloca o valor 4 vezes para 
+ldi deslocamentos_dir    , 4    ; r16/4 
+mov deslocamentos_dir_cte, deslocamentos_dir
+mov contador_medidas     , r16  ; Contador do loop para armazenar medidas
+mov cte_medidas          , r16  ; Cte. do loop 
+ldi r26, low(0x0300)            ; Endereço inicial baixo para Z
+ldi r27, high(0x0300)           ; Endereço inicial alto  para Z
+ldi r28, low(0x0400)            ; Endereço inicial baixo para Y
+ldi r29, high(0x0400)           ; Endereço inicial alto  para Y
 
 ; Configura o ADC -> termometro PC0
 ldi    R16,     0b01_0_0_0000 ; REFS1,REFS0 (01) = Vref igual ao Vcc, ADLAR (0) 8 bits ADCL 2 bits ADCH, MUX (0000) ADC0 porta PC0
@@ -66,13 +72,16 @@ sts    ADCSRB,  R16            ; configura autotrigger em free running
 loop_store:
     lds r16, ADCH
     lds r17, ADCL
-    st Z+,   r16            ; Armazena a parte alta no endereço atual, incrementa Z
-    st Y+,  r17             ; Armazena a parte baixa no endereço apontado por Y, incrementa Y
-    add soma_low, r16  ; Adicionar parte baixa à soma
-    adc soma_high, r17 ; Adicionar parte alta à soma com carry
-    dec contador_medidas    ; Decrementa o contador
-    brne loop_store         ; Se o contador não é zero, repete o loop
+    st Z+,   r16                ; Armazena a parte alta no endereço atual, incrementa Z
+    st Y+,   r17                ; Armazena a parte baixa no endereço apontado por Y, incrementa Y
+    add soma_low, r16           ; Adicionar parte baixa à soma
+    adc soma_high, r17          ; Adicionar parte alta à soma com carry
+    dec contador_medidas        ; Decrementa o contador
+    brne loop_store             ; Se o contador não é zero, repete o loop
 
 media_final:
-    mov contador_medidas, r21
-    ; faz divisao de um num. de 16 bits por um de 8 bits
+    mov contador_medidas, cte_medidas
+    lsr soma_low            ; Desloca o bit mais baixo da parte baixa para o carry
+    ror soma_high           ; Rota a parte alta para direita, puxando o carry para o bit mais alto
+    dec deslocamentos_dir
+    breq media_final        ; Desloca x vezes para direita
