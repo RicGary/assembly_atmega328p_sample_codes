@@ -52,7 +52,7 @@ ldi    R16,high(RAMEND)
 out    SPH,R16
 
 ; Configura constantes
-ldi quantidade_medias, 2      ; 124 medias ate o codigo desligar
+ldi quantidade_medias, 124        ; 124 medias ate o codigo desligar
 mov quantidade_medias_cte, quantidade_medias
 ldi r16, 16                     ; Numero de medidas realizadas, precisa ser multiplo de 2, como 16=2^4 desloca o valor 4 vezes para 
 ldi deslocamentos_dir    , 4    ; r16/4 
@@ -101,7 +101,7 @@ store_media: ; Armazena as n medias nos registradores Y e Z, reinicia variaveis
     brne loop_add
 
 memory_reset: ; Verifica se foram escritos 124 valores na memoria para comecar a sobrescrever
-    ldi r18, 0xff
     ldi YL, low(0x0400)
     ldi ZL, low(0x0300)
+    mov quantidade_medias, quantidade_medias_cte
     rjmp loop_add
