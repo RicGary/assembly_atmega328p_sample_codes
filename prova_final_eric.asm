@@ -42,8 +42,8 @@
 .def deslocamentos_dir_cte  = r12   ; Valor fixo de deslocamentos
 .def quantidade_medias      = r19   ; Valor responsavel por armazenar x medias
 .def quantidade_medias_cte  = r14   ; Cte var. anterior                                  
-.def soma_low               = r23   
-.def soma_high              = r21
+.def soma_low               = r23  
+.def soma_high              = r24
 
 ; Configura pilha 
 ldi    R16,low(RAMEND)
@@ -52,7 +52,7 @@ ldi    R16,high(RAMEND)
 out    SPH,R16
 
 ; Configura constantes
-ldi quantidade_medias, 124      ; 124 medias ate o codigo desligar
+ldi quantidade_medias, 2      ; 124 medias ate o codigo desligar
 mov quantidade_medias_cte, quantidade_medias
 ldi r16, 16                     ; Numero de medidas realizadas, precisa ser multiplo de 2, como 16=2^4 desloca o valor 4 vezes para 
 ldi deslocamentos_dir    , 4    ; r16/4 
@@ -60,8 +60,8 @@ mov deslocamentos_dir_cte, deslocamentos_dir
 mov contador_medidas     , r16  ; Contador do loop para armazenar medidas
 mov cte_medidas          , r16  ; Cte. do loop 
 ; Z parte alta, Y parte baixa
-ldi r30, low(0x0300)            ; Endereço inicial baixo para Z (X?) , Endereço maximo = Endereço inicial + 124 (7C)
-ldi r31, high(0x0300)           ; Endereço inicial alto  para Z (X?)
+ldi r30, low(0x0300)            ; Endereço inicial baixo para Z, Endereço maximo = Endereço inicial + 124 (7C)
+ldi r31, high(0x0300)           ; Endereço inicial alto  para Z
 ldi r28, low(0x0400)            ; Endereço inicial baixo para Y
 ldi r29, high(0x0400)           ; Endereço inicial alto  para Y
 
@@ -76,6 +76,11 @@ sts    ADCSRB,  R16             ; Configura autotrigger em free running
 loop_add:
     lds r16, ADCH
     lds r17, ADCL
+
+    ; Debug
+    ldi r16, 1
+    ldi r17, 1
+
     add soma_low, r16           ; Adicionar parte baixa à soma
     adc soma_high, r17          ; Adicionar parte alta à soma com carry
     dec contador_medidas        ; Decrementa o contador
@@ -96,6 +101,7 @@ store_media: ; Armazena as n medias nos registradores Y e Z, reinicia variaveis
     brne loop_add
 
 memory_reset: ; Verifica se foram escritos 124 valores na memoria para comecar a sobrescrever
+    ldi r18, 0xff
     ldi YL, low(0x0400)
     ldi ZL, low(0x0300)
     rjmp loop_add
