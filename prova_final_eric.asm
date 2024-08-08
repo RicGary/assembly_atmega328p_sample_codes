@@ -75,6 +75,7 @@ ldi r31, high(0x0300)           ; Endereço inicial alto  para Z
 ldi r28, low(0x0400)            ; Endereço inicial baixo para Y
 ldi r29, high(0x0400)           ; Endereço inicial alto  para Y
 
+; Vou deixar isso aqui para consultar os pinos facilmente
 ; Configura o ADC -> termometro PC0
 ;ldi    R16,     0b01_0_0_0000   ; REFS1,REFS0 (01) = Vref igual ao Vcc, ADLAR (0) 8 bits ADCL 2 bits ADCH, MUX (0000) ADC0 porta PC0
 ;sts    ADMUX,   R16            
@@ -82,7 +83,6 @@ ldi r29, high(0x0400)           ; Endereço inicial alto  para Y
 ;sts    ADCSRA,  R16            
 ;ldi    R16,     0b0000_0_000    ; ACME (0) utiliza entrada padrao do ADC, ADTSx (000) ADC automaticamente inicia uma nova conversao assim que a anterior for feita
 ;sts    ADCSRB,  R16             ; Configura autotrigger em free running
-
 
 ; Configurar o ADC -> potenciometro PC1
 ;ldi    R16,     0b01_0_0_0001   ; REFS1,REFS0 (01) = Vref igual ao Vcc, ADLAR (0) 8 bits ADCL 2 bits ADCH, MUX (0001) ADC0 porta PC1
@@ -113,14 +113,17 @@ store_media: ; Armazena as n medias nos registradores Y e Z, reinicia variaveis
     mov deslocamentos_dir, deslocamentos_dir_cte
     st Z+,   soma_high                ; Armazena a parte alta no endereço atual, incrementa Z
     st Y+,   soma_low                ; Armazena a parte baixa no endereço apontado por Y, incrementa Y
-    dec quantidade_medias
-    brne loop_add
 
 calculo_erro:
-    ld r18, Z   ; Parte high da media do termometro
-    ld r19, Y   ; Parte low da media do termometro
+    ld r18, Z                   ; Parte high da media do termometro
+    ld r19, Y                   ; Parte low da media do termometro
     sts ADMUX, potenciometro    ; Garante que o pino PC1 sera lido
-    call ler_adc
+    call ler_adc                ; Le o potenciometro e armazena o resultado em r16 e r17
+   
+    ; Codigo do calculo do erro vai aqui...
+
+    dec quantidade_medias
+    brne loop_add
 
 memory_reset: ; Verifica se foram escritos 124 valores na memoria para comecar a sobrescrever
     ldi YL, low(0x0400)
