@@ -48,8 +48,9 @@
 .def soma_high              = r25
 .def termometro             = r13
 .def potenciometro          = r14
+.def Kd                     = r15
 
-; Reg usados: r11, r12, r13, r14, r21, r22, r23, r24, r25
+; Reg usados: r10, r11, r12, r13, r14, r15, r21, r22, r23, r24, r25
 
 ; Configura pilha 
 ldi    R16,low(RAMEND)
@@ -121,9 +122,32 @@ calculo_erro:
     call ler_adc                ; Le o potenciometro e armazena o resultado em r16 e r17
    
     ; Codigo do calculo do erro vai aqui...
-    ; termometro - potenciometro
-    sub r18, r16
-    sbc r19, r17
+    ; termometro (G) - potenciometro (R)
+    sub r18, r16        ; High
+    sbc r19, r17        ; Low
+    ; Quero fazer esse numero de 16 bits * Kd
+
+    ; Multiplicar erro por Kd
+    clr r16             ; r26 será usado para armazenar o resultado low da primeira multiplicação
+    clr r17             ; r27 será usado para armazenar o resultado high da multiplicação completa
+
+    ; Multiplicar o byte baixo do erro por Kd
+    mul r19, Kd         ; r19 * Kd
+    mov r16, r0         ; Armazena o resultado baixo
+    mov r19, r1         ; Armazena o resultado alto (intermediário)
+
+    ; Multiplicar o byte alto do erro por Kd
+    mul r18, Kd         ; r18 * Kd
+    mov r18, r0         ; Armazena o resultado baixo da segunda multiplicação
+    mov r17, r1         ; Armazena o resultado alto da segunda multiplicação
+
+    ; Adicionar os resultados intermediários -> numero de 16 bits [r17(H):r18(L)]
+    add r18, r19        ; Adiciona o resultado alto da primeira multiplicação ao resultado baixo da segunda
+    adc r17, r1         ; Adiciona qualquer carry ao byte mais alto
+
+    ; Limpa os registros usados na multiplicação
+    clr r0
+    clr r1
 
     dec quantidade_medias
     brne loop_add
