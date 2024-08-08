@@ -16,12 +16,14 @@
 ; FEITO
 ; - Guardar o valor das �ltimas 124 m�dias na mem�ria.
 
-; 
+; FEITO
 ; - Calcular um sinal de erro a partir da um valor de refer�ncia predeterminado no 
 ;   programa via uma porta anal�gica (0-5V)
 
+; 
 ; - Gerar um sinal de sa�da de controle proporcional ao sinal de erro e com escala de 8 bits.
 
+;
 ; - Configurar um pwm com o sinal de controle.
 
 
@@ -65,7 +67,9 @@ ldi r16, 16                     ; Numero de medidas realizadas, precisa ser mult
 ldi deslocamentos_dir    , 4    ; r16/4 
 mov deslocamentos_dir_cte, deslocamentos_dir
 mov contador_medidas     , r16  ; Contador do loop para armazenar medidas
-mov cte_medidas          , r16  ; Cte. do loop 
+mov cte_medidas          , r16  ; Cte. do loop
+ldi r16, 1
+mov r15, r16                    ; Valor de Kd 
 ldi r16, 0b01_0_0_0000
 mov termometro           , r16
 ldi r16, 0b01_0_0_0001
@@ -121,15 +125,10 @@ calculo_erro:
     sts ADMUX, potenciometro    ; Garante que o pino PC1 sera lido
     call ler_adc                ; Le o potenciometro e armazena o resultado em r16 e r17
    
-    ; Codigo do calculo do erro vai aqui...
-    ; termometro (G) - potenciometro (R)
+    ; Calculo do erro
+    ; Kd * (termometro (G) - potenciometro (R))
     sub r18, r16        ; High
     sbc r19, r17        ; Low
-    ; Quero fazer esse numero de 16 bits * Kd
-
-    ; Multiplicar erro por Kd
-    clr r16             ; r26 será usado para armazenar o resultado low da primeira multiplicação
-    clr r17             ; r27 será usado para armazenar o resultado high da multiplicação completa
 
     ; Multiplicar o byte baixo do erro por Kd
     mul r19, Kd         ; r19 * Kd
