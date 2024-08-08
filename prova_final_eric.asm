@@ -121,6 +121,9 @@ calculo_erro:
     call ler_adc                ; Le o potenciometro e armazena o resultado em r16 e r17
    
     ; Codigo do calculo do erro vai aqui...
+    ; termometro - potenciometro
+    sub r18, r16
+    sbc r19, r17
 
     dec quantidade_medias
     brne loop_add
