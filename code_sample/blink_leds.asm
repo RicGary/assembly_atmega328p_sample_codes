@@ -22,20 +22,20 @@ sts TCCR1A, r16
 ldi r16, 0b00_0_00_101 ; Prescaler de 1024, levando clock para 15.625 Hz
 sts TCCR1B, r16
 ldi r16, high(TIMER_VALUE)
-sts OCR1AH, r16           ; Sempre escrever primeiro valor alto e depois o valor baixo, para ler e o contrario
+sts OCR1AH, r16
 ldi r16, low(TIMER_VALUE) ; Valor escolhido para cada ciclo levar 1s
 sts OCR1AL, r16
 
 
 ; Comeca a piscar os leds
 main_loop:
-    sbis TIFR1, 1       ; Reg responsavel por setar a flag do OCRnx quando o timer chegar no valor marcado
+    sbis TIFR1, 1
     rjmp main_loop
 
     ; Altera o estado dos leds
-    in r16, PORTD       ; Le o valor da portaD (leds)
-    com r16             ; Inverte o valor de todos os bits
-    out PORTD, r16      ; Atualiza o estado do led
+    in r16, PORTD ; Le o valor da portaD (leds)
+    com r16 ; Inverte o valor de todos os bits
+    out PORTD, r16 ; Atualiza o estado do led
 
     clr r16
     sts TCNT1H, r16
