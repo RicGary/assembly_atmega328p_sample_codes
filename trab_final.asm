@@ -120,7 +120,7 @@ empate:
 
 espera:
     sbis   TIFR1, 1           ; Verifica o timer
-    rjmp   epsera             ; Se ainda nao atingiu, continua verificando
+    rjmp   espera             ; Se ainda nao atingiu, continua verificando
     clr    r16   
     out    PORTB, r16         ; Apaga os LEDs na PBx
     rjmp   wait_button        ; Retorna ao loop de espera do botao
