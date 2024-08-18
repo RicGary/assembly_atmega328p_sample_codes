@@ -82,25 +82,25 @@ compara_e_reinicia:
     brge   vitoria_j1                 ; Se pontuacao_j1 >= pontuacao_j2, vai para a rotina de vitoria do jogador 1
 
 vitoria_j1:  
-    sbi    PORTD, PD0      ; Liga o LED do jogador 1
+    sbi    PORTB, PB0      ; Liga o LED do jogador 1
     lds    R16  , TCNT1H   ; Le a parte alta do timer 1
     cpi    R16  , 123      ; Compara o valor da parte alta com 123 (aproximadamente 5 segundos)
     brlo   vitoria_j1      ; Se ainda nao atingiu 123, continua verificando
     inc    vitorias_j1     ; Incrementa o contador de vitorias do jogador 1
     clr    pontuacao_j1    ; Reseta a pontuacao do jogador 1
     clr    j1_pressed      ; Reseta a flag de botao pressionado do jogador 1
-    cbi    PORTD, PD0      ; Desliga o LED do jogador 1
+    cbi    PORTB, PB0      ; Desliga o LED do jogador 1
     rjmp   wait_button     ; Retorna ao loop de espera do botao
 
 vitoria_j2:
-    sbi    PORTD, PD1      ; Liga o LED do jogador 2
+    sbi    PORTB, PD1      ; Liga o LED do jogador 2
     lds    R16  , TCNT1H   ; Le a parte alta do timer 1
     cpi    R16  , 123      ; Compara o valor da parte alta com 123 (aproximadamente 5 segundos)
     brlo   vitoria_j2      ; Se ainda nao atingiu 123, continua verificando
     inc    vitorias_j2     ; Incrementa o contador de vitorias do jogador 2
     clr    pontuacao_j2    ; Reseta a pontuacao do jogador 2
     clr    j2_pressed      ; Reseta a flag de botao pressionado do jogador 2
-    cbi    PORTD, PD1      ; Desliga o LED do jogador 2
+    cbi    PORTB, PB1      ; Desliga o LED do jogador 2
     rjmp   wait_button     ; Retorna ao loop de espera do botao
 
 botao_j1:

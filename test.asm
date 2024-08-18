@@ -104,6 +104,8 @@ vitoria_j2:
     rjmp   wait_button     ; Retorna ao loop de espera do botao
 
 botao_j1:
+    sbi    PORTB, PB4      ; Liga o LED do jogador 1
+
     clr    is_pressed         ; Limpa a flag is_pressed 
     clr    botao_reset        ; Limpa a flag botao_reset
     clr    R16                ; Limpa o registrador r16
@@ -115,6 +117,8 @@ botao_j1:
     rjmp   wait_button        ; Retorna ao loop de espera do botao
 
 botao_j2:
+    sbi    PORTB, PB4      ; Liga o LED do jogador 1
+
     clr    is_pressed         ; Limpa a flag is_pressed 
     clr    botao_reset        ; Limpa a flag botao_reset
     clr    R16                ; Limpa o registrador r16
@@ -126,13 +130,17 @@ botao_j2:
     rjmp   wait_button        ; Retorna ao loop de espera do botao
 
 soma_j1:
-    call   num_aleatorio
-    add    pontuacao_j1, num_final
+    ;call   num_aleatorio
+    ;add    pontuacao_j1, num_final
+    ldi r16, 8
+    add pontuacao_j1, r16
     rjmp   wait_button
 
 soma_j2:
-    call   num_aleatorio
-    add    pontuacao_j2, num_final
+    ;call   num_aleatorio
+    ;add    pontuacao_j2, num_final
+    ldi r16, 7
+    add pontuacao_j2, r16
     rjmp   wait_button
 
 num_aleatorio:                ; Valor vai de 0-7, faz inc para virar 1-8 e simular um dado de 8 lados (d8)
