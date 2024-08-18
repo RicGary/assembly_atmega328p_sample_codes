@@ -147,14 +147,15 @@ num_aleatorio:                ; Valor vai de 0-7, faz inc para virar 1-8 e simul
     call  ler_adc             ; Segunda leitura ADC
     mov   r17, r18            ; Move o resultado para r17
     andi  r17, 0x01           ; Isola o bit menos significativo
-    or    num_final, r17      ; Adiciona ao numero final na posicao 0
+    lsl   r17                 ; Desloca para a esquerda (posicao 1)
+    or    num_final, r17      ; Adiciona ao numero final na posicao 1
 
     call  ler_adc             ; Terceira leitura ADC
     mov   r17, r18            ; Move o resultado para r17
     andi  r17, 0x01           ; Isola o bit menos significativo
     lsl   r17                 ; Desloca para a esquerda
     lsl   r17                 ; Desloca novamente para a esquerda (posicao 2)
-    or    num_final, r17      ; Adiciona ao numero final
+    or    num_final, r17      ; Adiciona ao numero final na posicao 2
 
     inc   num_final           ; Soma 1 para transformar em um valor de 1-8
     ret
@@ -163,13 +164,13 @@ ler_adc:
     ldi  r16   , 0b1_1_000101  ; Inicia uma conversao ADC
     sts  ADCSRA, r16           ; Configura ADCSRA para iniciar a conversao
 
-wait_conversion:
-    lds    r16, ADCSRA        ; Le o registrador ADCSRA
-    sbrs   r16, 6             ; Verifica se a conversao terminou (bit ADSC = 0)
-    rjmp   wait_conversion    ; Se a conversao nao terminou, fica em loop
+    wait_conversion:
+        lds    r16, ADCSRA        ; Le o registrador ADCSRA
+        sbrs   r16, 6             ; Verifica se a conversao terminou (bit ADSC = 0)
+        rjmp   wait_conversion    ; Se a conversao nao terminou, fica em loop
 
-    lds    r18, ADCL          ; Le o resultado da conversao e armazena em r18
-    ret                       ; Retorna para a rotina anterior
+        lds    r18, ADCL          ; Le o resultado da conversao e armazena em r18
+        ret                       ; Retorna para a rotina anterior
 
 buttom_debouncing:
     in     R16, TCNT0             ; Carrega o valor do timer 0
