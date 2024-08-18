@@ -204,12 +204,12 @@ buttom_debouncing:
     cpi    R16, 0b00000000        ; Compara se algum dos botoes esta em 0 (pressionado)
     brne   buttom_debouncing      ; Se nenhum botao esta pressionado, volta ao inicio do debouncing
 
-button_pressed:
-    clr    R18                    ; Limpa R18 para servir de contador de ciclo
-    sbrs   botao_reset, 1         ; Verifica se a rotina foi chamada pelo reset
-    rjmp   compara_e_reinicia     ; Se for o reset, vai para a rotina de comparacao e reinicio
-    ser    is_pressed             ; Seta a flag indicando que o botao foi pressionado
-    ret
+    button_pressed:
+        clr    R18                    ; Limpa R18 para servir de contador de ciclo
+        sbrs   botao_reset, 1         ; Verifica se a rotina foi chamada pelo reset
+        rjmp   compara_e_reinicia     ; Se for o reset, vai para a rotina de comparacao e reinicio
+        ser    is_pressed             ; Seta a flag indicando que o botao foi pressionado
+        ret
 
 reset_flags:
     out    SREG, r16   ; Reinicia todas as flags no SREG (I, C, Z, N, V, S, H, T)
