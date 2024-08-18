@@ -1,5 +1,5 @@
 .include "m328pdef.inc"  ; Inclui o arquivo de definicão do ATmega328P
-.org   0x0000              ; Define o endereco de inicio do programa
+.org   0x0000            ; Define o endereco de inicio do programa
 rjmp   config
 
 ; Interrupts
@@ -35,6 +35,7 @@ config:
 
     sbi   DDRB, PB0             ; Configura PB0 como saida -> Jogador 1 vence
     sbi   DDRB, PB1             ; Configura PB1 como saida -> Jogador 2 vence
+    sbi   DDRB, PB4             ; LED de debug
     clr	  R16				    ; Limpa R16
     out	  PORTB,R16	            ; limpa a porta B para saida - estado inicial desliga led
 
@@ -49,11 +50,16 @@ config:
     out   TCCR0B, R16           ; Configura clk com prescaler de PS8 = 010
 
     ; Configura timer do LED
-    ; Considerando apenas a parte alta, quero que o led fique ligado +- 5s
-    ldi   R16, 0b00000000          ; Configura o modo do Timer 1 para Normal Mode (WGM13=0, WGM12=0, WGM11=0, WGM10=0)
-    sts   TCCR1A, R16              ; Passa o valor para o TCCR1A
-    ldi   R16, 0b00001100          ; CTC com prescaler de 256 (CS12 = 1)
-    sts   TCCR1B, R16              ; Passa o valor para o TCCR1B
+    ldi r16   , 0b00_00_00_00    ; Carrega 0 no registrador r16, configurando o Timer1 no modo normal (sem nenhuma operação especial)
+    sts TCCR1A, r16              ; Armazena o valor de r16 no registrador TCCR1A, configurando o Timer1 para operar no modo normal
+    ldi r16   , 0b00_0_00_101    ; Carrega 0b00000101 em r16 para configurar o Timer1 com prescaler de 1024 (CS12=1, CS11=0, CS10=1) e habilita o modo CTC (WGM12=1)
+    sts TCCR1B, r16              ; Armazena o valor de r16 no registrador TCCR1B, aplicando o prescaler e configurando o Timer1 para operar no modo CTC
+
+    ldi r16   , high(TIMER_VALUE); Carrega a parte alta de TIMER_VALUE no registrador r16
+    sts OCR1AH, r16              ; Armazena o valor de r16 no registrador OCR1AH, configurando a parte alta do valor de comparação para o Timer1
+    ldi r16   , low(TIMER_VALUE) ; Carrega a parte baixa de TIMER_VALUE no registrador r16
+    sts OCR1AL, r16              ; Armazena o valor de r16 no registrador OCR1AL, configurando a parte baixa do valor de comparação para o Timer1
+
 
     ; Definindo constantes
     clr   pontuacao_j1
@@ -75,33 +81,45 @@ wait_button:
     rjmp   wait_button       ; Se o botao de reset nao foi pressionado, continua no loop
 
 compara_e_reinicia:
-    cp     pontuacao_j1, pontuacao_j2 ; Compara as pontuacoes dos dois jogadores
     clr    R16                        ; Limpa r16 para reiniciar o timer
     sts    TCNT1H, R16                ; Zera a parte alta do timer 1
-    brlt   vitoria_j2                 ; Se pontuacao_j1 < pontuacao_j2, vai para a rotina de vitoria do jogador 2
-    brge   vitoria_j1                 ; Se pontuacao_j1 >= pontuacao_j2, vai para a rotina de vitoria do jogador 1
+
+    call   reset_flags                ; Pior parte do codigo foi descobrir esse bug
+    cp     pontuacao_j1, pontuacao_j2 ; Compara as pontuacoes dos dois jogadores
+
+    breq   empate                     ; Se pontuacao_j1 = pontuacao_j2, vai para a rotina de empate
+    brcs   vitoria_j2                 ; Se pontuacao_j1 < pontuacao_j2, vai para a rotina de vitoria do jogador 2 / branch if carry is set
 
 vitoria_j1:  
-    sbi    PORTB, PB0      ; Liga o LED do jogador 1
-    lds    R16  , TCNT1H   ; Le a parte alta do timer 1
-    cpi    R16  , 123      ; Compara o valor da parte alta com 123 (aproximadamente 5 segundos)
-    brlo   vitoria_j1      ; Se ainda nao atingiu 123, continua verificando
-    inc    vitorias_j1     ; Incrementa o contador de vitorias do jogador 1
-    clr    pontuacao_j1    ; Reseta a pontuacao do jogador 1
-    clr    j1_pressed      ; Reseta a flag de botao pressionado do jogador 1
-    cbi    PORTB, PB0      ; Desliga o LED do jogador 1
-    rjmp   wait_button     ; Retorna ao loop de espera do botao
+    sbi    PORTB, PB0         ; Liga o LED do jogador 1
+    inc    vitorias_j1        ; Incrementa o contador de vitorias do jogador 1
+    clr    pontuacao_j1       ; Reseta a pontuacao do jogador 1
+    clr    j1_pressed         ; Reseta a flag de botao pressionado do jogador 1
+    rjmp   espera             ; Pula para a rotina de espera
 
-vitoria_j2:
-    sbi    PORTB, PD1      ; Liga o LED do jogador 2
-    lds    R16  , TCNT1H   ; Le a parte alta do timer 1
-    cpi    R16  , 123      ; Compara o valor da parte alta com 123 (aproximadamente 5 segundos)
-    brlo   vitoria_j2      ; Se ainda nao atingiu 123, continua verificando
-    inc    vitorias_j2     ; Incrementa o contador de vitorias do jogador 2
-    clr    pontuacao_j2    ; Reseta a pontuacao do jogador 2
-    clr    j2_pressed      ; Reseta a flag de botao pressionado do jogador 2
-    cbi    PORTB, PB1      ; Desliga o LED do jogador 2
-    rjmp   wait_button     ; Retorna ao loop de espera do botao
+vitoria_j2:  
+    sbi    PORTB, PB1         ; Liga o LED do jogador 2
+    inc    vitorias_j2        ; Incrementa o contador de vitorias do jogador 2
+    clr    pontuacao_j2       ; Reseta a pontuacao do jogador 2
+    clr    j2_pressed         ; Reseta a flag de botao pressionado do jogador 2
+    rjmp   espera             ; Pula para a rotina de espera
+
+empate:
+    ldi    r16  , 0b0000_0011 ; Liga os LEDS PB0 e PB1
+    out    PORTB, r16
+    inc    vitorias_j1        ; Incrementa o contador de vitorias do jogador 1
+    inc    vitorias_j2        ; Incrementa o contador de vitorias do jogador 2
+    clr    pontuacao_j1       ; Reseta a pontuacao do jogador 1
+    clr    pontuacao_j2       ; Reseta a pontuacao do jogador 2
+    clr    j1_pressed         ; Reseta a flag de botao pressionado do jogador 1
+    clr    j2_pressed         ; Reseta a flag de botao pressionado do jogador 2
+
+espera:
+    sbis   TIFR1, 1           ; Verifica o timer
+    rjmp   epsera             ; Se ainda nao atingiu, continua verificando
+    clr    r16   
+    out    PORTB, r16         ; Apaga os LEDs na PBx
+    rjmp   wait_button        ; Retorna ao loop de espera do botao
 
 botao_j1:
     clr    is_pressed         ; Limpa a flag is_pressed 
@@ -161,8 +179,8 @@ num_aleatorio:                ; Valor vai de 0-7, faz inc para virar 1-8 e simul
     ret
 
 ler_adc:
-    ldi  r16   , 0b1_1_000101  ; Inicia uma conversao ADC
-    sts  ADCSRA, r16           ; Configura ADCSRA para iniciar a conversao
+    ldi  r16   , 0b1_1_000101     ; Inicia uma conversao ADC
+    sts  ADCSRA, r16              ; Configura ADCSRA para iniciar a conversao
 
     wait_conversion:
         lds    r16, ADCSRA        ; Le o registrador ADCSRA
@@ -183,8 +201,13 @@ buttom_debouncing:
     brne   buttom_debouncing      ; Se nenhum botao esta pressionado, volta ao inicio do debouncing
 
 button_pressed:
-    clr    R18                ; Limpa R18 para servir de contador de ciclo
-    sbrs   botao_reset, 1     ; Verifica se a rotina foi chamada pelo reset
-    rjmp   compara_e_reinicia ; Se for o reset, vai para a rotina de comparacao e reinicio
-    ser    is_pressed         ; Seta a flag indicando que o botao foi pressionado
+    clr    R18                    ; Limpa R18 para servir de contador de ciclo
+    sbrs   botao_reset, 1         ; Verifica se a rotina foi chamada pelo reset
+    rjmp   compara_e_reinicia     ; Se for o reset, vai para a rotina de comparacao e reinicio
+    ser    is_pressed             ; Seta a flag indicando que o botao foi pressionado
+    ret
+
+reset_flags:
+    out    SREG, r16   ; Reinicia todas as flags no SREG (I, C, Z, N, V, S, H, T)
+    sei                ; Reativa as interrupções globais
     ret
