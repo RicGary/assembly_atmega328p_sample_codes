@@ -1,5 +1,20 @@
 .include "m328pdef.inc"  ; Inclui o arquivo de definicão do ATmega328P
 .org   0x0000            ; Define o endereco de inicio do programa
+
+; Definindo variaveis
+.def   pontuacao_j1 = r20
+.def   pontuacao_j2 = r21
+.def   vitorias_j1  = r22
+.def   vitorias_j2  = r23
+.def   botao_reset  = r24
+.def   num_final    = r25
+.def   is_pressed   = r26
+.def   j1_pressed   = r27
+.def   j2_pressed   = r28
+
+; Definindo constante
+.equ TIMER_VALUE = 162500   ; Equivale a 4s com PK 1024
+
 rjmp   config
 
 ; Interrupts
@@ -9,17 +24,6 @@ rjmp   botao_j1
 rjmp   botao_j2
 
 config:
-    ; Definindo variaveis
-    .def   pontuacao_j1 = r20
-    .def   pontuacao_j2 = r21
-    .def   vitorias_j1  = r22
-    .def   vitorias_j2  = r23
-    .def   botao_reset  = r24
-    .def   num_final    = r25
-    .def   is_pressed   = r26
-    .def   j1_pressed   = r27
-    .def   j2_pressed   = r28
-
     ; Configura a pilha
     ldi   r16, low(RAMEND)  ; Carrega o byte menos significativo do endereco de RAMEND em r16
     out   SPL, r16          ; Armazena o byte menos significativo do endereco de RAMEND no registrador SPL
