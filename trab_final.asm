@@ -18,12 +18,12 @@ rjmp   botao_j2
 .def   is_pressed   = r26
 .def   j1_pressed   = r27
 .def   j2_pressed   = r28
-    
+
 ; Configura a pilha
-ldi   r16, high(RAMEND) ; Carrega o byte mais significativo do endereco de RAMEND em r16
-out   SPH, r16          ; Armazena o byte mais significativo do endereco de RAMEND no registrador SPH
 ldi   r16, low(RAMEND)  ; Carrega o byte menos significativo do endereco de RAMEND em r16
 out   SPL, r16          ; Armazena o byte menos significativo do endereco de RAMEND no registrador SPL
+ldi   r16, high(RAMEND) ; Carrega o byte mais significativo do endereco de RAMEND em r16
+out   SPH, r16          ; Armazena o byte mais significativo do endereco de RAMEND no registrador SPH
 
 ; Configura os pinos  Gasta mais linhas e energia mas prefiro fazer assim para deixar facil de ler as portas
 cbi   DDRD, PD2         ; Configura PD2 como entrada (BOTAO) -> Jogador 1
@@ -34,15 +34,15 @@ out   PORTB, r16        ; Ativa o resistor pull-up no PBx
 
 sbi   DDRD, PB0             ; Configura PB0 como saida -> Jogador 1 vence
 sbi   DDRD, PB1             ; Configura PB1 como saida -> Jogador 2 vence
-clr	  R16				      ; Limpa R16
-out	  PORTD,R16	          ; limpa a porta D para saida - estado inicial desliga led
+clr	  R16				    ; Limpa R16
+out	  PORTD,R16	            ; limpa a porta D para saida - estado inicial desliga led
 
 ; Configura interrupt para os jogadores
 ldi   r16  , 0b00001010     ; ISC01 = 1, ISC11 = 1 para borda de descida, ISC00 = 0, ISC10 = 0
 sts   EICRA, r16            ; Define borda de descida para INT0 e INT1
 ldi   r16  , 0b00000011     ; 0b00000011 corresponde a INT1 e INT0 habilitados
 out   EIMSK, r16            ; Ativa as interrupcões para INT0 e INT1
-sei                       ; Habilita interrupcões globais
+sei                         ; Habilita interrupcões globais
 
 ; Configura parte do ADC
 ldi   r16  , 0b01_0_0_0000  ; Move valor para r16
@@ -85,7 +85,7 @@ vitoria_j1:
     lds    R16  , TCNT1H   ; Le a parte alta do timer
     cpi    R16  , 123      ; Compara o valor alto de 5
     brlo   vitoria_j1      ; Se nao chegou volta para loop
-    inc    vitoria_j1      ; Se chegou adiciona 1 vitoria ao j1
+    inc    vitorias_j1     ; Se chegou adiciona 1 vitoria ao j1
     clr    pontuacao_j1    ; Limpa pontuacao
     clr    j1_pressed      ; Nao vai ser usado
     cbi    PORTD, PD0      ; Desliga o led
@@ -96,7 +96,7 @@ vitoria_j2:
     lds    R16  , TCNT1H   ; Le a parte alta do timer
     cpi    R16  , 123      ; Compara o valor alto de 5
     brlo   vitoria_j2      ; Se nao chegou volta para loop
-    inc    vitoria_j2      ; Se chegou adiciona 1 vitoria ao j2
+    inc    vitorias_j2     ; Se chegou adiciona 1 vitoria ao j2
     clr    pontuacao_j2    ; Limpa pontuacao
     clr    j2_pressed      ; Nao vai ser usado
     cbi    PORTD, PD1      ; Desliga o led
